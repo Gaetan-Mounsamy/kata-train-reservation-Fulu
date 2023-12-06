@@ -2,4 +2,4 @@ train/*
 trains/*
 *.pyc
 .venv
-mon_env/
+venv/
