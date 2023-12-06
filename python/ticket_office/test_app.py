@@ -1,15 +1,15 @@
 import json
-import httpx
+import requests
 
 
 def test_reserve_seats_from_empty_train():
     train_id = "express_2000"
 
-    client = httpx.Client()
-    response = client.post(f"http://127.0.0.1:8081/reset/{train_id}")
+    session = requests.Session()
+    response = session.post(f"http://127.0.0.1:8081/reset/{train_id}")
     response.raise_for_status()
 
-    response = client.post(
+    response = session.post(
         "http://127.0.0.1:8083/reserve", json={"train_id": train_id, "count": 4}
     )
 
@@ -23,16 +23,16 @@ def test_reserve_seats_from_empty_train():
 def test_reserve_four_additional_seats():
     train_id = "express_2000"
 
-    client = httpx.Client()
-    response = client.post(f"http://127.0.0.1:8081/reset/{train_id}")
+    session = requests.Session()
+    response = session.post(f"http://127.0.0.1:8081/reset/{train_id}")
     response.raise_for_status()
 
-    response = client.post(
+    response = session.post(
         "http://127.0.0.1:8083/reserve", json={"train_id": train_id, "count": 4}
     )
     assert response.status_code == 200, response.text
 
-    response = client.post(
+    response = session.post(
         "http://127.0.0.1:8083/reserve", json={"train_id": train_id, "count": 4}
     )
     assert response.status_code == 200, response.text

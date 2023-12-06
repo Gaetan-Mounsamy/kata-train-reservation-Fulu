@@ -1,6 +1,8 @@
-import json
 import requests
+from requests import Session
+import json
 from flask import Flask, request
+
 
 class Train:
     def __init__(self, train_id):
@@ -11,10 +13,13 @@ class Train:
         return filter(lambda s: s["coach"] == "A" and not s["booking_reference"], self.data["seats"].values())
     
 class Reservation:
-    def __init__(self, train: Train, booking_reference, to_reserve):
+    def __init__(self, train: Train, booking_reference):
         self.train = train
         self.booking_reference = booking_reference
-        self.seat_ids = [s["seat_number"] + s["coach"] for s in to_reserve]
+        self.seat_ids = None
+
+    def reserve_seats(self, available_seats, seat_count):
+        self.seat_ids = [next(available_seats) for _ in range(seat_count)]
     
     def get_payload(self):
         return {
@@ -25,6 +30,14 @@ class Reservation:
     
 def reserve_seats(available_seats, seat_count):
     return [next(available_seats) for _ in range(seat_count)]
+
+
+class LoggingSession(Session):
+    def request(self, method, url, *args, **kwargs):
+        print(f"Request: {method} {url}")
+        response = super().request(method, url, *args, **kwargs)
+        print(f"Response: {response.status_code} {response.text}")
+        return response
 
 def create_app():
     app = Flask("ticket_office")
@@ -43,8 +56,8 @@ def create_app():
         booking_reference = requests.get("http://localhost:8082/booking_reference").text
 
         available_seats = train.check_available_seats()
-        to_reserve = reserve_seats(available_seats, seat_count)
-        reservation = Reservation(train, booking_reference, to_reserve)
+        reservation = Reservation(train, booking_reference)
+        reservation.reserve_seats(available_seats, seat_count)
 
         response = send_reservation(reservation)
         assert response.status_code == 200, response.text
